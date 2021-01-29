@@ -1,0 +1,12 @@
+body {
+  background-color: rgb(70, 137, 139);
+}
+
+.form-recipe {
+  max-width: 600px;
+  min-width: 340px;
+  padding: 20px;
+  margin: 0 auto;
+  background-color: white;
+  border-radius: 10px;
+}
