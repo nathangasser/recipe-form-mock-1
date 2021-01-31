@@ -1,44 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-import IngredientInput from './IngredientInput';
+import InputLine from './components/InputLine';
 import './recipe.css';
 
 
 function App() {
   // preloaded ingredients for testing
-  const [ingredientList, setIngredientList] = useState([
+  const [itemList, setItemList] = useState([
     {
       id: 1,
-      value: "Onions",
+      ingredient: "Onions",
+      amount: "2",
+      unit: "each",
     },
     {
       id: 2,
-      value: "Carrots",
+      ingredient: "Carrots",
+      amount: "1",
+      unit: "ea",
     },
     {
       id: 3,
-      value: "Garlic",
+      ingredient: "Garlic",
+      amount: "6",
+      unit: "cloves",
     },
     {
       id: 4,
-      value: "",
+      ingredient: "",
+      amount: "",
+      unit: "",
     },
   ]);
 
+  const [focusArr, setFocusArr] = useState([]);
+
+  // initialize focusArr
+  useEffect(() => {
+    const arr = [];
+    for (let i = 0; i++; i < (itemList.length - 1)) {
+      arr[i] = false;
+    }
+    arr[itemList.length - 1] = true;
+    setFocusArr(arr);
+  }, []);
+
+  useEffect(() => {
+    const renderInputs = itemList.map((item) => {
+      return (
+        <InputLine
+          item={item}
+          key={item.id}
+          handleTyping={handleTyping}
+          isFocus={focusArr[item.id - 1]}
+          handleFocus={handleFocus}
+        />
+      );
+    });
+  }, [focusArr.join(",")]);
+
+  // Only amounts and ingredients are considered important input
+  const allFieldsBlank = (item) => {
+    if (item.amount === "" && item.ingredient === "") {
+      return true;
+    }
+    else return false;
+  };
+
   // helper function to call to make sure we're cleaning up extra inputs
-  const cleanExtraInput = (arr) => {
+  const cleanEmptyInputs = (arr) => {
     let extraInputExists = true;
     while (extraInputExists === true) {
       // check if last two inputs are blank
-      if (
-        arr[arr.length - 1].value === "" &&
-        arr[arr.length - 2].value === ""
-      ) {
+      if (allFieldsBlank(arr[arr.length - 1]) && allFieldsBlank(arr[arr.length - 2])) {
         // remove the last input and it's ref
         arr.pop();
-        inputRefs.pop();
-        // set focus on the last empty input
-        inputRefs[inputRefs.length - 1].current.focus();
       } else {
         // break out of loop
         extraInputExists = false;
@@ -47,43 +83,46 @@ function App() {
     return arr;
   };
 
+  const setRowFocus = (i) => {
+    const tempArr = [...focusArr];
+    tempArr.fill(false);
+    tempArr[i] = true;
+    setFocusArr(tempArr);
+  };
+
   // this is called every time a key is pressed inside any input
-  const handleTyping = (id, text) => {
-    const copyList = [...ingredientList];
+  const handleTyping = (id, field, text) => {
+    const copyList = [...itemList];
     // if user is typing on last input then create a
     // blank object to be automatically rendered below
     if (id === copyList.length) {
-      copyList.push({ id: copyList.length + 1, value: "" });
+      copyList.push({
+        id: copyList.length + 1, 
+        ingredient: "",
+        amount: "",
+        unit: "",
+      });
     }
-    // set the value of the typed text to the correct element in the array
-    copyList[id - 1].value = text;
-    // we don't ever want two blank inputs at the
-    // bottom of the input field
-    setIngredientList(cleanExtraInput(copyList));
+    copyList[id - 1][field] = text;
+    setRowFocus(id - 1);
+    setItemList(cleanEmptyInputs(copyList));
   };
 
-  // check if key press was Enter button and then move to next line
-  const checkEnterTab = (event, id) => {
-    if (event.key === "Enter" && inputRefs[id]) {
-      inputRefs[id].current.focus();
-    }
+  const handleFocus = (id) => {
+    setRowFocus(id - 1);
   };
 
-  // init array of refs
-  const inputRefs = [];
-  // create inputs from piece of state
-  const renderInputs = ingredientList.map((item) => {
-    // create ref for each element
-    inputRefs[item.id - 1] = React.createRef();
+  //     NEW RENDERINPUTS
+  const renderInputs = itemList.map((item) => {
     return (
-      <IngredientInput
-        ref={inputRefs[item.id - 1]}
-        id={item.id}
-        value={item.value}
+      <InputLine
+        item={item}
+        key={item.id}
         handleTyping={handleTyping}
-        checkEnterTab={checkEnterTab}
+        isFocus={focusArr[item.id - 1]}
+        handleFocus={handleFocus}
       />
-    );
+    )
   });
 
   return (
